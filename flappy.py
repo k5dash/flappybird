@@ -155,7 +155,13 @@ class Base:
 		win.blit(self.IMG, (self.x1, self.y))
 		win.blit(self.IMG, (self.x2, self.y))
 
-def draw_window(win, bird, pipes, base, score):
+	def collide(self, bird):
+		if bird.y > WIN_HEIGHT - BASE_IMG.get_height():
+			return True
+		
+		return False
+
+def draw_window(win, bird, pipes, base, score, game_over):
 	win.blit(BG_IMG,(0,0))
 
 	for pipe in pipes:
@@ -163,9 +169,12 @@ def draw_window(win, bird, pipes, base, score):
 
 	text = STAT_FONT.render("Score: " + str(score), 1, (255, 255,255))
 	win.blit(text, (WIN_WIDTH - 10 - text.get_width(), 10))
+	if game_over:
+		game_over_text = STAT_FONT.render("GAME OVER", 1, (255, 0, 0))
+		win.blit(game_over_text, (WIN_WIDTH/2 - game_over_text.get_width()/2, WIN_HEIGHT/3 - game_over_text.get_height()/2))
 
-	bird.draw(win)
 	base.draw(win)
+	bird.draw(win)
 	pygame.display.update()
 
 def main():
@@ -174,13 +183,14 @@ def main():
 	pipes = [Pipe(600)]
 	base = Base(WIN_HEIGHT - BASE_IMG.get_height())
 	score = 0
-
+	game_over = False
 	win = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
 	clock = pygame.time.Clock()
 
 	run = True
+
 	while run:
-		clock.tick()
+		clock.tick(30)
 		add_pipe = False
 		rems = []
 		base.move()
@@ -188,11 +198,14 @@ def main():
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
 				run = False
-		# bird.move()
+			if event.type == pygame.KEYDOWN:
+				if event.key == pygame.K_SPACE:
+					bird.jump()
+		bird.move()
 		
 		for pipe in pipes:
 			if pipe.collide(bird):
-				pass
+				game_over = True
 			if pipe.x + pipe.PIPE_TOP.get_width()<0:
 				rems.append(pipe)
 
@@ -204,6 +217,8 @@ def main():
 		if add_pipe:
 			score +=1
 			pipes.append(Pipe(700))
+		if base.collide(bird):
+			game_over = True
 
 		for r in rems:
 			pipes.remove(r)
@@ -211,11 +226,7 @@ def main():
 		if bird.y + bird.img.get_height() >= (WIN_HEIGHT - BASE_IMG.get_height()):
 			pass
 		
-		draw_window(win, bird, pipes, base, score)
-
-		# keys=pygame.key.get_pressed()
-		# if keys[pygame.K_SPACE]:
-		# 	bird.move()
+		draw_window(win, bird, pipes, base, score,game_over)
 
 	pygame.quit()
 	quit()
